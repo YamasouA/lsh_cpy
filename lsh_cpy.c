@@ -4,13 +4,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <dirent.h>
 
 int lsh_cd(char **args);
 int lsh_help(char **args);
 int lsh_exit(char **args);
+int lsh_ls(char **args);
 
 char *builtin_str[] = {
     "cd",
+    "ls",
     "help",
     "exit"
 };
@@ -23,6 +26,7 @@ int lsh_num_builtins() {
 // 関数ポインタ？
 int (*builtin_func[])(char **) = {
     &lsh_cd,
+    &lsh_ls,
     &lsh_help,
     &lsh_exit
 };
@@ -39,6 +43,38 @@ int lsh_cd(char **args)
             perror("lsh");
         }
     }
+    return 1;
+}
+
+int lsh_ls(char **args)
+{
+    char dirname[256];
+    DIR *dir;
+    struct dirent *ent;
+
+    if (args[1] == NULL) {
+        strcpy (dirname, ".");
+    } else {
+        strcpy(dirname, args[1]);
+    }
+
+    // ディレクトリをオープンにしてreaddir()とかで読み取れるようにする
+    // 正常に終了したら、dirオブジェクトへのポインタを戻す
+    // NULLポインタを返す
+    dir = opendir(dirname);
+    if (dir == NULL) {
+        fprintf(stderr, "unable to opendir %s\n", dirname);
+    }
+
+    while ((ent = readdir(dir)) != NULL) {
+        if (ent->d_name[0] == '.') {
+            continue;
+        }
+        printf("%s ", ent->d_name);
+    }
+    printf("\n");
+    closedir(dir);
+
     return 1;
 }
 
