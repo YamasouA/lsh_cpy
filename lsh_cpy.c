@@ -67,9 +67,13 @@ int lsh_ls(char **args)
     }
 
     while ((ent = readdir(dir)) != NULL) {
+        // 隠しファイルスキップ
         if (ent->d_name[0] == '.') {
             continue;
         }
+        // ent->d_reclen: レコード長(バイトの単位)
+        // ent->d_namlen: ディレクトリ名の文字列の長さ
+        // ent->d_name:   ディレクトリ名
         printf("%s ", ent->d_name);
     }
     printf("\n");
