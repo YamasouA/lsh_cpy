@@ -1,5 +1,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -7,15 +9,18 @@
 #include <dirent.h>
 
 int lsh_cd(char **args);
+int lsh_ls(char **args);
+int lsh_cat(char **args);
 int lsh_help(char **args);
 int lsh_exit(char **args);
-int lsh_ls(char **args);
+
 
 char *builtin_str[] = {
     "cd",
     "ls",
+    "cat",
     "help",
-    "exit"
+    "exit",
 };
 
 int lsh_num_builtins() {
@@ -27,6 +32,7 @@ int lsh_num_builtins() {
 int (*builtin_func[])(char **) = {
     &lsh_cd,
     &lsh_ls,
+    &lsh_cat,
     &lsh_help,
     &lsh_exit
 };
@@ -79,6 +85,63 @@ int lsh_ls(char **args)
     printf("\n");
     closedir(dir);
 
+    return 1;
+}
+
+#define BUFSIZE 4096
+int lsh_cat(char **args)
+{
+    int i;
+
+    if (args[1] == NULL) {
+        fprintf(stderr, "file name not given\n");
+    }
+
+    i = 1;
+    while (args[i] != NULL)    
+    {
+        int fd;
+        unsigned char buf[BUFSIZE];
+        ssize_t cc;
+
+        // O_RDONLY: 読み込み可
+        // 失敗：-1
+        // 成功：ファイルデスクリプタ
+        if ((fd = open(args[i], O_RDONLY)) == -1)
+        {
+            fprintf(stderr, "no such file\n");
+            break;
+        }
+        for (;;) {
+            // read:
+            // fd: 読み出すデータが格納されたファイルディスクリプタ
+            // buf: 読み出したデータを格納するバッファの先頭アドレス
+            // count: 読み込む最大バイト数
+            // 戻り値: ssize_t型に返す
+            // 0: ファイルのオフセットがすでにEOF
+            // -1: エラーが発生
+            cc = read(fd, buf, sizeof buf);
+            if (cc == -1)
+            {
+                fprintf(stderr, "read error\n");
+                break;
+            }
+            if (cc == 0)
+                break;
+            if (write(STDOUT_FILENO, buf, cc) == -1)
+            {
+                fprintf(stderr, "write error\n");
+                break;
+            }
+        }
+        if (close(fd) == -1)
+        {
+            fprintf(stderr, "close error\n");
+            break;
+        }
+        i++;
+    }
+    printf("\n");
     return 1;
 }
 
@@ -164,6 +227,8 @@ int lsh_excute(char **args)
                                              // 多分関数ポインタな気がする
         }
     }
+
+    // 自分で実装していないときにパソコンにあるファイルを見に行く
     return lsh_launch(args);
 }
 
