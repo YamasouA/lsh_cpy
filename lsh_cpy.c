@@ -21,6 +21,7 @@ char *builtin_str[] = {
     "cat",
     "help",
     "exit",
+    "cp",
 };
 
 int lsh_num_builtins() {
@@ -34,7 +35,8 @@ int (*builtin_func[])(char **) = {
     &lsh_ls,
     &lsh_cat,
     &lsh_help,
-    &lsh_exit
+    &lsh_exit,
+    &lsh_cp,
 };
 
 // args[0] == "cd", args[1] == directory
@@ -164,6 +166,45 @@ int lsh_exit(char **args)
     return 0;
 }
 
+int lsh_cp(char **args)
+{
+    FILE *file, *new_file;
+    int i;
+    i = 1;
+    while (args[i] != NULL)
+        i++;
+    if (i < 3) {
+        fprintf(stderr, "file num is too small")
+        return 0;
+    } else if (i > 3) {
+        fprintf(stderr, "file num is too large")
+        return 0;
+    }
+
+    file = fopen(argv[1], "rb");
+    if (!file) {
+        fprintf(stderr, "can't open file\n");
+        return 0;
+    }
+    new_file = fopen(argv[2], "wb");
+    if (!new_file) {
+        fprintf(stderr, "can't open file\n");
+        return 0;
+    }
+
+    char buf[4096];
+    size_t size;
+    while ((size=fread(buf, sizeof(char), sizeof(buf), file)) > 0) {
+        if (fwrite(buf, sizeof(char), size, new_file) <= 0) {
+            fprintf(stderr, "can't copy")
+            return 0;
+        }
+    }
+
+    fclose(file);
+    fclose(new_file);
+    return 1;
+}
 
 
 int lsh_launch(char **args)
